@@ -4,31 +4,69 @@ Converted from phagehostlearn_inference.ipynb for HPC (Biowulf) usage.
 
 Usage:
     python phagehostlearn_inference.py \
-        --phages_path /path/to/phage_genomes \
-        --bacteria_path /path/to/bacteria_genomes \
+        --phages_fasta /path/to/all_phages.fasta \
+        --bacteria_list /path/to/bacteria_paths.txt \
         --output_path /path/to/output \
         --kaptive_db /path/to/Klebsiella_k_locus_primary_reference.gbk \
         --phanotate_path /path/to/phanotate.py \
         --hmmer_path /path/to/hmmer \
         --suffix inference
+
+Inputs:
+    --phages_fasta:  A single multi-FASTA file with all phage genomes (separated by >).
+                     Each record's header becomes the phage ID.
+    --bacteria_list: A text file with one path per line, each pointing to an individual
+                     host genome FASTA file. The filename (minus .fasta) becomes the strain ID.
 """
 
 import argparse
+import os
 import pickle
 import numpy as np
 import pandas as pd
+from Bio import SeqIO
 from xgboost import XGBClassifier
 
 import phagehostlearn_processing as phlp
 import phagehostlearn_features as phlf
 
 
+def split_phage_fasta(phages_fasta, output_dir):
+    """Split a multi-FASTA file into individual FASTA files, one per phage."""
+    os.makedirs(output_dir, exist_ok=True)
+    count = 0
+    for record in SeqIO.parse(phages_fasta, 'fasta'):
+        out_file = os.path.join(output_dir, record.id + '.fasta')
+        SeqIO.write(record, out_file, 'fasta')
+        count += 1
+    print(f'  Split {count} phage genomes into {output_dir}')
+    return output_dir
+
+
+def link_bacteria_genomes(bacteria_list, output_dir):
+    """Symlink individual bacterial genome FASTAs into a single directory."""
+    os.makedirs(output_dir, exist_ok=True)
+    count = 0
+    with open(bacteria_list, 'r') as f:
+        for line in f:
+            fasta_path = line.strip()
+            if not fasta_path:
+                continue
+            basename = os.path.basename(fasta_path)
+            link_path = os.path.join(output_dir, basename)
+            if not os.path.exists(link_path):
+                os.symlink(os.path.abspath(fasta_path), link_path)
+            count += 1
+    print(f'  Linked {count} bacterial genomes into {output_dir}')
+    return output_dir
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='PhageHostLearn inference pipeline')
-    parser.add_argument('--phages_path', type=str, required=True,
-                        help='Path to folder containing phage genome FASTA files')
-    parser.add_argument('--bacteria_path', type=str, required=True,
-                        help='Path to folder containing bacterial genome FASTA files')
+    parser.add_argument('--phages_fasta', type=str, required=True,
+                        help='Multi-FASTA file containing all phage genomes')
+    parser.add_argument('--bacteria_list', type=str, required=True,
+                        help='Text file with one host genome FASTA path per line')
     parser.add_argument('--output_path', type=str, required=True,
                         help='Path to output directory (intermediate files and results written here)')
     parser.add_argument('--kaptive_db', type=str, required=True,
@@ -54,13 +92,19 @@ def main():
     path = args.output_path
     suffix = args.suffix
 
-    # Create output directory if it doesn't exist
-    import os
+    # Create output directory
     os.makedirs(path, exist_ok=True)
+
+    # Prepare input directories from user's data formats
+    print('Preparing input data...')
+    phages_dir = os.path.join(path, 'phage_genomes')
+    bacteria_dir = os.path.join(path, 'bacteria_genomes')
+    split_phage_fasta(args.phages_fasta, phages_dir)
+    link_bacteria_genomes(args.bacteria_list, bacteria_dir)
 
     # ---- Step 1: Data processing ----
     print('Step 1/4: Running PHANOTATE for phage gene calling...')
-    phlp.phanotate_processing(path, args.phages_path, args.phanotate_path, data_suffix=suffix)
+    phlp.phanotate_processing(path, phages_dir, args.phanotate_path, data_suffix=suffix)
 
     print('Step 2/4: Computing protein embeddings for RBP detection...')
     phlp.compute_protein_embeddings(path, data_suffix=suffix)
@@ -71,7 +115,7 @@ def main():
                         gene_embeddings_file, data_suffix=suffix)
 
     print('Step 4/4: Processing bacterial genomes with Kaptive...')
-    phlp.process_bacterial_genomes(path, args.bacteria_path, args.kaptive_db, data_suffix=suffix)
+    phlp.process_bacterial_genomes(path, bacteria_dir, args.kaptive_db, data_suffix=suffix)
 
     # ---- Step 2: Feature construction ----
     print('Computing ESM-2 embeddings for RBPs...')

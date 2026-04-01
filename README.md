@@ -18,12 +18,15 @@ This is the repository related to our manuscript published in [Nature Communicat
 ### Command-line script (for HPC/server use)
 1. Clone or download this repository.
 2. Install all the necessary software, see below.
-3. Prepare your data: create folders for phage genomes and bacterial genomes, with each genome as an individual FASTA file. If predicting new bacteria against training phages (or vice versa), download the training genomes from [Zenodo](https://zenodo.org/records/8095914).
+3. Prepare your data:
+   - **Phage genomes**: a single multi-FASTA file with all phage genomes (each record's header becomes the phage ID).
+   - **Bacterial genomes**: a text file with one path per line, each pointing to an individual host genome FASTA file. The filename (minus `.fasta`) becomes the strain ID.
+   - If predicting new bacteria against training phages (or vice versa), download the training genomes from [Zenodo](https://zenodo.org/records/8095914).
 4. Run the inference script from the `code` directory:
 ```bash
 python phagehostlearn_inference.py \
-    --phages_path /path/to/phage_genomes \
-    --bacteria_path /path/to/bacteria_genomes \
+    --phages_fasta /path/to/all_phages.fasta \
+    --bacteria_list /path/to/bacteria_paths.txt \
     --output_path /path/to/output \
     --kaptive_db /path/to/Klebsiella_k_locus_primary_reference.gbk \
     --phanotate_path /path/to/phanotate.py \

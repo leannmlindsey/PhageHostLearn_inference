@@ -5,8 +5,8 @@
 #
 
 # ---- Input data paths ----
-PHAGES_PATH="/path/to/phage_genomes"
-BACTERIA_PATH="/path/to/bacteria_genomes"
+PHAGES_FASTA="/path/to/all_phages.fasta"        # Multi-FASTA with all phage genomes
+BACTERIA_LIST="/path/to/bacteria_paths.txt"      # One host genome FASTA path per line
 KAPTIVE_DB="/path/to/Klebsiella_k_locus_primary_reference.gbk"
 
 # ---- Output path (intermediate files and results go here) ----
@@ -26,8 +26,8 @@ SUFFIX="inference"
 
 # ---- Run ----
 python phagehostlearn_inference.py \
-    --phages_path "$PHAGES_PATH" \
-    --bacteria_path "$BACTERIA_PATH" \
+    --phages_fasta "$PHAGES_FASTA" \
+    --bacteria_list "$BACTERIA_LIST" \
     --output_path "$OUTPUT_PATH" \
     --kaptive_db "$KAPTIVE_DB" \
     --phanotate_path "$PHANOTATE_PATH" \
