@@ -1,6 +1,10 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11074747.svg)](https://doi.org/10.5281/zenodo.11074747)
 
-# PhageHostLearn
+# PhageHostLearn Inference
+
+**This is a fork of [PhageHostLearn](https://github.com/dimiboeckaerts/PhageHostLearn), modified to convert the inference pipeline from a Jupyter notebook to a standalone Python script for running on HPC servers (e.g. Biowulf).** The inference notebook (`phagehostlearn_inference.ipynb`) has been converted to `phagehostlearn_inference.py` with command-line arguments. All original code and logic are preserved.
+
+---
 
 This is the repository related to our manuscript published in [Nature Communications](https://www.nature.com/articles/s41467-024-48675-6):
 "Prediction of _Klebsiella_ phage-host specificity at the strain level", authored by Boeckaerts D, Stock M, Ferriol-González C, Jesús O-I, Sanjuan R, Domingo-Calap P, De Baets B and Briers Y.
@@ -10,6 +14,24 @@ This is the repository related to our manuscript published in [Nature Communicat
 - `analysis_notebooks`: folder including various subfolders related to certain analyses of the work, for informative purposes; _notebooks_exploration_ (various exploratory analyses), _notebooks_models_ (previous iterations of the PhageHostLearn system) and _notebooks_processing_ (separate old notebooks for processing genome data)
 
 ## Making predictions for your data
+
+### Command-line script (for HPC/server use)
+1. Clone or download this repository.
+2. Install all the necessary software, see below.
+3. Prepare your data: create folders for phage genomes and bacterial genomes, with each genome as an individual FASTA file. If predicting new bacteria against training phages (or vice versa), download the training genomes from [Zenodo](https://zenodo.org/records/8095914).
+4. Run the inference script from the `code` directory:
+```bash
+python phagehostlearn_inference.py \
+    --data_path ./data \
+    --phages_path ./data/phage_genomes \
+    --bacteria_path ./data/bacteria_genomes \
+    --kaptive_db ./data/Klebsiella_k_locus_primary_reference.gbk \
+    --phanotate_path /path/to/phanotate.py \
+    --hmmer_path /path/to/hmmer \
+    --suffix inference
+```
+
+### Jupyter notebook (original)
 1. Clone or download this repository on your local computer.
 2. Install all the necessary software to run PhageHostLearn, see below.
 3. Navigate to the `phagehostlearn_inference.ipynb` notebook in the `code` folder.
