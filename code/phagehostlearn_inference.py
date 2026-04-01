@@ -4,10 +4,10 @@ Converted from phagehostlearn_inference.ipynb for HPC (Biowulf) usage.
 
 Usage:
     python phagehostlearn_inference.py \
-        --data_path ./data \
-        --phages_path ./data/phage_genomes \
-        --bacteria_path ./data/bacteria_genomes \
-        --kaptive_db ./data/Klebsiella_k_locus_primary_reference.gbk \
+        --phages_path /path/to/phage_genomes \
+        --bacteria_path /path/to/bacteria_genomes \
+        --output_path /path/to/output \
+        --kaptive_db /path/to/Klebsiella_k_locus_primary_reference.gbk \
         --phanotate_path /path/to/phanotate.py \
         --hmmer_path /path/to/hmmer \
         --suffix inference
@@ -25,12 +25,12 @@ import phagehostlearn_features as phlf
 
 def parse_args():
     parser = argparse.ArgumentParser(description='PhageHostLearn inference pipeline')
-    parser.add_argument('--data_path', type=str, required=True,
-                        help='Path to the data folder')
     parser.add_argument('--phages_path', type=str, required=True,
                         help='Path to folder containing phage genome FASTA files')
     parser.add_argument('--bacteria_path', type=str, required=True,
                         help='Path to folder containing bacterial genome FASTA files')
+    parser.add_argument('--output_path', type=str, required=True,
+                        help='Path to output directory (intermediate files and results written here)')
     parser.add_argument('--kaptive_db', type=str, required=True,
                         help='Path to Kaptive K-locus reference database (.gbk)')
     parser.add_argument('--phanotate_path', type=str, required=True,
@@ -51,8 +51,12 @@ def parse_args():
 def main():
     args = parse_args()
 
-    path = args.data_path
+    path = args.output_path
     suffix = args.suffix
+
+    # Create output directory if it doesn't exist
+    import os
+    os.makedirs(path, exist_ok=True)
 
     # ---- Step 1: Data processing ----
     print('Step 1/4: Running PHANOTATE for phage gene calling...')

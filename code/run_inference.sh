@@ -4,11 +4,13 @@
 # Modify the variables below for your environment and data paths.
 #
 
-# ---- Data paths ----
-DATA_PATH="./data"
-PHAGES_PATH="./data/phage_genomes"
-BACTERIA_PATH="./data/bacteria_genomes"
-KAPTIVE_DB="./data/Klebsiella_k_locus_primary_reference.gbk"
+# ---- Input data paths ----
+PHAGES_PATH="/path/to/phage_genomes"
+BACTERIA_PATH="/path/to/bacteria_genomes"
+KAPTIVE_DB="/path/to/Klebsiella_k_locus_primary_reference.gbk"
+
+# ---- Output path (intermediate files and results go here) ----
+OUTPUT_PATH="/path/to/output"
 
 # ---- Software paths ----
 PHANOTATE_PATH="/path/to/phanotate.py"
@@ -24,9 +26,9 @@ SUFFIX="inference"
 
 # ---- Run ----
 python phagehostlearn_inference.py \
-    --data_path "$DATA_PATH" \
     --phages_path "$PHAGES_PATH" \
     --bacteria_path "$BACTERIA_PATH" \
+    --output_path "$OUTPUT_PATH" \
     --kaptive_db "$KAPTIVE_DB" \
     --phanotate_path "$PHANOTATE_PATH" \
     --hmmer_path "$HMMER_PATH" \

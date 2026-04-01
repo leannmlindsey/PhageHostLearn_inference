@@ -22,14 +22,16 @@ This is the repository related to our manuscript published in [Nature Communicat
 4. Run the inference script from the `code` directory:
 ```bash
 python phagehostlearn_inference.py \
-    --data_path ./data \
-    --phages_path ./data/phage_genomes \
-    --bacteria_path ./data/bacteria_genomes \
-    --kaptive_db ./data/Klebsiella_k_locus_primary_reference.gbk \
+    --phages_path /path/to/phage_genomes \
+    --bacteria_path /path/to/bacteria_genomes \
+    --output_path /path/to/output \
+    --kaptive_db /path/to/Klebsiella_k_locus_primary_reference.gbk \
     --phanotate_path /path/to/phanotate.py \
     --hmmer_path /path/to/hmmer \
     --suffix inference
 ```
+
+Alternatively, edit the variables in `run_inference.sh` and run `bash run_inference.sh`.
 
 ### Jupyter notebook (original)
 1. Clone or download this repository on your local computer.
