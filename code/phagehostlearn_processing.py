@@ -245,23 +245,25 @@ def phanotate_processing(general_path, phage_genomes_path, phanotate_path, data_
         process = subprocess.Popen(raw_str, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout, stderr = process.communicate()
         std_splits = stdout.split(sep=b'\n')
-        # Skip comment lines (starting with #id:) but keep the header row (#START...)
-        std_splits = [s for s in std_splits if not s.startswith(b'#id:')]
-        
+        # Skip all comment/header lines (starting with #)
+        std_splits = [s for s in std_splits if s.strip() and not s.startswith(b'#')]
+
         # Save and reload TSV
         temp_tab = open(general_path+'/phage_results.tsv', 'wb')
         for split in std_splits:
             split = split.replace(b',', b'') # replace commas for pandas compatibility
             temp_tab.write(split + b'\n')
         temp_tab.close()
-        results_orfs = pd.read_csv(general_path+'/phage_results.tsv', sep=r'\s+', lineterminator='\n', index_col=False, comment=None, engine='python')
-        
+        results_orfs = pd.read_csv(general_path+'/phage_results.tsv', sep=r'\s+', header=None,
+                                   names=['start', 'stop', 'frame', 'contig', 'score'],
+                                   index_col=False, engine='python')
+
         # fill up lists accordingly
         name = file.split('.fasta')[0]
         sequence = str(SeqIO.read(file_dir, 'fasta').seq)
-        for j, strand in enumerate(results_orfs['FRAME']):
-            start = results_orfs['#START'][j]
-            stop = results_orfs['STOP'][j]
+        for j, strand in enumerate(results_orfs['frame']):
+            start = results_orfs['start'][j]
+            stop = results_orfs['stop'][j]
             
             if strand == '+':
                 gene = sequence[start-1:stop]
