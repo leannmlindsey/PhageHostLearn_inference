@@ -282,10 +282,6 @@ def phanotate_processing(general_path, phage_genomes_path, phanotate_path, data_
         bar.update(1)
     bar.close()
 
-    # remove .tsv file if we're not in test mode
-    if test == False:
-        os.remove(general_path+'/phage_results.tsv')
-
     # Export final genes database
     genebase = pd.DataFrame(list(zip(name_list, gene_ids, gene_list)), columns=['phage_ID', 'gene_ID', 'gene_sequence'])
     if add == True:
@@ -445,11 +441,11 @@ def process_bacterial_genomes(general_path, bact_genomes_path, database_path, da
         dict_file = open(general_path+'/Locibase'+data_suffix+'.json')
         old_locibase = json.load(dict_file)
         loci_accessions = list(old_locibase.keys())
-        fastas = [x for x in fastas if x.split('.fasta')[0] not in loci_accessions]
+        fastas = [x for x in fastas if os.path.splitext(x)[0] not in loci_accessions]
         print('Processing ', len(fastas), ' more bacteria (add=True)')
 
     # run Kaptive
-    accessions = [file.split('.fasta')[0] for file in fastas]
+    accessions = [os.path.splitext(file)[0] for file in fastas]
     serotypes = []
     loci_results = {}
     pbar = tqdm(total=len(fastas))

@@ -53,6 +53,10 @@ def link_bacteria_genomes(bacteria_list, output_dir):
             if not fasta_path:
                 continue
             basename = os.path.basename(fasta_path)
+            # Ensure .fasta extension for downstream compatibility
+            name, ext = os.path.splitext(basename)
+            if ext != '.fasta':
+                basename = name + '.fasta'
             link_path = os.path.join(output_dir, basename)
             if not os.path.exists(link_path):
                 os.symlink(os.path.abspath(fasta_path), link_path)
@@ -103,30 +107,52 @@ def main():
     link_bacteria_genomes(args.bacteria_list, bacteria_dir)
 
     # ---- Step 1: Data processing ----
-    print('Step 1/4: Running PHANOTATE for phage gene calling...')
-    phlp.phanotate_processing(path, phages_dir, args.phanotate_path, data_suffix=suffix)
-
-    print('Step 2/4: Computing protein embeddings for RBP detection...')
-    phlp.compute_protein_embeddings(path, data_suffix=suffix)
-
-    print('Step 3/4: Detecting phage RBPs...')
+    phage_genes_file = path + '/phage_genes' + suffix + '.csv'
     gene_embeddings_file = path + '/phage_protein_embeddings' + suffix + '.csv'
-    phlp.phageRBPdetect(path, args.pfam_path, args.hmmer_path, args.xgb_rbpdetect_path,
-                        gene_embeddings_file, data_suffix=suffix)
-
-    print('Step 4/4: Processing bacterial genomes with Kaptive...')
-    phlp.process_bacterial_genomes(path, bacteria_dir, args.kaptive_db, data_suffix=suffix)
-
-    # ---- Step 2: Feature construction ----
-    print('Computing ESM-2 embeddings for RBPs...')
-    phlf.compute_esm2_embeddings_rbp(path, data_suffix=suffix)
-
-    print('Computing ESM-2 embeddings for K-loci...')
-    phlf.compute_esm2_embeddings_loci(path, data_suffix=suffix)
-
-    print('Constructing feature matrices...')
+    rbpbase_file = path + '/RBPbase' + suffix + '.csv'
+    locibase_file = path + '/Locibase' + suffix + '.json'
     rbp_embeddings_path = path + '/esm2_embeddings_rbp' + suffix + '.csv'
     loci_embeddings_path = path + '/esm2_embeddings_loci' + suffix + '.csv'
+
+    if os.path.exists(phage_genes_file):
+        print('Step 1/4: PHANOTATE output found, skipping...')
+    else:
+        print('Step 1/4: Running PHANOTATE for phage gene calling...')
+        phlp.phanotate_processing(path, phages_dir, args.phanotate_path, data_suffix=suffix)
+
+    if os.path.exists(gene_embeddings_file):
+        print('Step 2/4: Protein embeddings found, skipping...')
+    else:
+        print('Step 2/4: Computing protein embeddings for RBP detection...')
+        phlp.compute_protein_embeddings(path, data_suffix=suffix)
+
+    if os.path.exists(rbpbase_file):
+        print('Step 3/4: RBPbase found, skipping...')
+    else:
+        print('Step 3/4: Detecting phage RBPs...')
+        phlp.phageRBPdetect(path, args.pfam_path, args.hmmer_path, args.xgb_rbpdetect_path,
+                            gene_embeddings_file, data_suffix=suffix)
+
+    if os.path.exists(locibase_file):
+        print('Step 4/4: Locibase found, skipping...')
+    else:
+        print('Step 4/4: Processing bacterial genomes with Kaptive...')
+        phlp.process_bacterial_genomes(path, bacteria_dir, args.kaptive_db, data_suffix=suffix)
+
+    # ---- Step 2: Feature construction ----
+    if os.path.exists(rbp_embeddings_path):
+        print('ESM-2 RBP embeddings found, skipping...')
+    else:
+        print('Computing ESM-2 embeddings for RBPs...')
+        phlf.compute_esm2_embeddings_rbp(path, data_suffix=suffix)
+
+    if os.path.exists(loci_embeddings_path):
+        print('ESM-2 loci embeddings found, skipping...')
+    else:
+        print('Computing ESM-2 embeddings for K-loci...')
+        phlf.compute_esm2_embeddings_loci(path, data_suffix=suffix)
+
+    print('Constructing feature matrices...')
     features_esm2, groups_bact = phlf.construct_feature_matrices(
         path, suffix, loci_embeddings_path, rbp_embeddings_path, mode='test')
 
