@@ -242,28 +242,30 @@ def phanotate_processing(general_path, phage_genomes_path, phanotate_path, data_
         # access PHANOTATE
         file_dir = phage_genomes_path+'/'+file
         raw_str = phanotate_path + ' ' + file_dir
-        process = subprocess.Popen(raw_str, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        process = subprocess.Popen(raw_str, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
-        std_splits = stdout.split(sep=b'\n')
-        # Skip all comment/header lines (starting with #)
-        std_splits = [s for s in std_splits if s.strip() and not s.startswith(b'#')]
 
-        # Save and reload TSV
-        temp_tab = open(general_path+'/phage_results.tsv', 'wb')
-        for split in std_splits:
-            split = split.replace(b',', b'') # replace commas for pandas compatibility
-            temp_tab.write(split + b'\n')
-        temp_tab.close()
-        results_orfs = pd.read_csv(general_path+'/phage_results.tsv', sep=r'\s+', header=None,
-                                   names=['start', 'stop', 'frame', 'contig', 'score'],
-                                   index_col=False, engine='python')
+        # Parse PHANOTATE output directly — skip comment/header lines, parse data lines
+        starts = []; stops = []; frames = []
+        for line in stdout.decode('utf-8').split('\n'):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            fields = line.split()
+            if len(fields) >= 3:
+                try:
+                    starts.append(int(fields[0]))
+                    stops.append(int(fields[1]))
+                    frames.append(fields[2])
+                except ValueError:
+                    continue
 
         # fill up lists accordingly
         name = file.split('.fasta')[0]
         sequence = str(SeqIO.read(file_dir, 'fasta').seq)
-        for j, strand in enumerate(results_orfs['frame']):
-            start = results_orfs['start'][j]
-            stop = results_orfs['stop'][j]
+        for j, strand in enumerate(frames):
+            start = starts[j]
+            stop = stops[j]
             
             if strand == '+':
                 gene = sequence[start-1:stop]
