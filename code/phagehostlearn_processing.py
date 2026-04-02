@@ -245,7 +245,8 @@ def phanotate_processing(general_path, phage_genomes_path, phanotate_path, data_
         process = subprocess.Popen(raw_str, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout, stderr = process.communicate()
         std_splits = stdout.split(sep=b'\n')
-        std_splits = std_splits[2:] #std_splits.pop(0)
+        # Skip comment lines (starting with #id:) but keep the header row (#START...)
+        std_splits = [s for s in std_splits if not s.startswith(b'#id:')]
         
         # Save and reload TSV
         temp_tab = open(general_path+'/phage_results.tsv', 'wb')
