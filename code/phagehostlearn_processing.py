@@ -254,7 +254,7 @@ def phanotate_processing(general_path, phage_genomes_path, phanotate_path, data_
             split = split.replace(b',', b'') # replace commas for pandas compatibility
             temp_tab.write(split + b'\n')
         temp_tab.close()
-        results_orfs = pd.read_csv(general_path+'/phage_results.tsv', sep='\t', lineterminator='\n', index_col=False, comment=None)
+        results_orfs = pd.read_csv(general_path+'/phage_results.tsv', sep=r'\s+', lineterminator='\n', index_col=False, comment=None, engine='python')
         
         # fill up lists accordingly
         name = file.split('.fasta')[0]
