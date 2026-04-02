@@ -14,7 +14,7 @@ OUTPUT_PATH="/path/to/output"
 
 # ---- Software paths ----
 PHANOTATE_PATH="/path/to/phanotate.py"
-HMMER_PATH="/path/to/hmmer"
+HMMER_PATH="."  # Directory containing RBPdetect_phageRBPs.hmm (run from code/ dir)
 
 # ---- Model files (defaults are in the code directory) ----
 PFAM_PATH="RBPdetect_phageRBPs.hmm"

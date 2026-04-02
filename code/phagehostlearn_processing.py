@@ -16,10 +16,11 @@ import pandas as pd
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SearchIO import HmmerIO
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 from os import listdir
 from xgboost import XGBClassifier
-from bio_embeddings.embed import ProtTransBertBFDEmbedder
+import torch
+from transformers import BertModel, BertTokenizer
 
 
 # 1 - FUNCTIONS
@@ -296,7 +297,12 @@ def compute_protein_embeddings(general_path, data_suffix='', add=False):
     in the cloud, using the separate notebook (compute_embeddings_cloud).
     """
     genebase = pd.read_csv(general_path+'/phage_genes'+data_suffix+'.csv')
-    embedder = ProtTransBertBFDEmbedder()
+
+    # Load ProtTransBertBFD model via transformers
+    tokenizer = BertTokenizer.from_pretrained('Rostlab/prot_bert_bfd', do_lower_case=False)
+    model = BertModel.from_pretrained('Rostlab/prot_bert_bfd')
+    model.eval()
+
     if add == True:
         old_embeddings_df = pd.read_csv(general_path+'/phage_protein_embeddings'+data_suffix+'.csv')
         protein_ids = list(old_embeddings_df['ID'])
@@ -308,8 +314,18 @@ def compute_protein_embeddings(general_path, data_suffix='', add=False):
     else:
         names = list(genebase['gene_ID'])
         sequences = [str(Seq(sequence).translate())[:-1] for sequence in genebase['gene_sequence']]
-    
-    embeddings = [embedder.reduce_per_protein(embedder.embed(sequence)) for sequence in tqdm(sequences)]
+
+    embeddings = []
+    for sequence in tqdm(sequences):
+        # ProtTransBertBFD expects spaces between amino acids
+        spaced_seq = ' '.join(list(sequence))
+        encoded = tokenizer(spaced_seq, return_tensors='pt', padding=True, truncation=True, max_length=40000)
+        with torch.no_grad():
+            output = model(**encoded)
+        # Mean pooling over sequence length (exclude special tokens)
+        embedding = output.last_hidden_state[0, 1:-1, :].mean(dim=0).numpy()
+        embeddings.append(embedding)
+
     embeddings_df = pd.concat([pd.DataFrame({'ID':names}), pd.DataFrame(embeddings)], axis=1)
     if add == True:
         embeddings_df = pd.DataFrame(np.vstack([old_embeddings_df, embeddings_df]), columns=old_embeddings_df.columns)
